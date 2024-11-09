@@ -25654,25 +25654,30 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = run;
 const core = __importStar(__nccwpck_require__(7484));
-const wait_1 = __nccwpck_require__(910);
+const portainer_1 = __importDefault(__nccwpck_require__(7641));
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
     try {
-        const ms = core.getInput('milliseconds');
-        // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-        core.debug(`Waiting ${ms} milliseconds ...`);
-        // Log the current timestamp, wait, then log the new timestamp
-        core.debug(new Date().toTimeString());
-        await (0, wait_1.wait)(parseInt(ms, 10));
-        core.debug(new Date().toTimeString());
-        // Set outputs for other workflow steps to use
-        core.setOutput('time', new Date().toTimeString());
+        const parameters = {
+            baseUrl: core.getInput('base-url'),
+            accessToken: core.getInput('access-token'),
+            endpointId: Number.parseInt(core.getInput('endpoint-id')),
+            stackName: core.getInput('stack-name'),
+            repositoryURL: core.getInput('repository-url'),
+            repositoryReferenceName: core.getInput('repository-ref'),
+            composeFile: core.getInput('compose-file'),
+            envJson: core.getInput('env-json') || '{}'
+        };
+        await (0, portainer_1.default)(parameters);
     }
     catch (error) {
         // Fail the workflow run if an error occurs
@@ -25684,25 +25689,117 @@ async function run() {
 
 /***/ }),
 
-/***/ 910:
+/***/ 9036:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.wait = wait;
-/**
- * Wait for a number of milliseconds.
- * @param milliseconds The number of milliseconds to wait.
- * @returns {Promise<string>} Resolves with 'done!' after the wait is over.
- */
-async function wait(milliseconds) {
-    return new Promise(resolve => {
-        if (isNaN(milliseconds)) {
-            throw new Error('milliseconds not a number');
-        }
-        setTimeout(() => resolve('done!'), milliseconds);
-    });
+exports.PortainerApi = exports.defaultPortainerStackFromGitPayload = void 0;
+exports.defaultPortainerStackFromGitPayload = {
+    method: 'repository',
+    type: 'standalone',
+    name: '', // replace with parameter
+    repositoryURL: '', // replace with parameter
+    repositoryReferenceName: '', // replace with parameter
+    composeFile: '', // replace with parameter
+    additionalFiles: [],
+    repositoryAuthentication: false,
+    repositoryUsername: '',
+    repositoryPassword: '',
+    repositoryGitCredentialID: 0,
+    env: [], // replace with parameter
+    supportRelativePath: false,
+    filesystemPath: '',
+    TLSSkipVerify: false
+};
+class PortainerApi {
+    _baseUrl;
+    _defaultHeaders;
+    constructor(baseUrl, token) {
+        this._baseUrl = baseUrl;
+        this._defaultHeaders = { 'X-API-Key': token };
+    }
+    async getAllStacks() {
+        const headers = this._defaultHeaders;
+        const request = { method: 'GET', headers };
+        const response = await fetch(`${this._baseUrl}/api/stacks`, request);
+        return (await response.json());
+    }
+    async deleteStack(endpointId, id) {
+        const headers = this._defaultHeaders;
+        const request = { method: 'DELETE', headers };
+        await fetch(`${this._baseUrl}/api/stacks/${id}?endpointId=${endpointId}`, request);
+    }
+    async postStack(endpointId, payload) {
+        const headers = this._defaultHeaders;
+        const rawData = JSON.stringify(payload);
+        const request = { method: 'POST', headers, body: rawData };
+        const url = `${this._baseUrl}/api/stacks/create/standalone/repository?endpointId=${endpointId}`;
+        const response = await fetch(url, request);
+        return (await response.json());
+    }
+}
+exports.PortainerApi = PortainerApi;
+
+
+/***/ }),
+
+/***/ 7641:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports["default"] = deploy;
+const core = __importStar(__nccwpck_require__(7484));
+const portainer_api_1 = __nccwpck_require__(9036);
+async function deploy(params) {
+    const apiInstance = new portainer_api_1.PortainerApi(params.baseUrl, params.accessToken);
+    // 1. Delete a stack if there is already existing in Portainer
+    core.info('Checking existing stack with the same name');
+    const stacks = await apiInstance.getAllStacks();
+    const stack = stacks.find(x => x.Name === params.stackName);
+    if (stack) {
+        core.info('Deleting existing stack with the same name');
+        await apiInstance.deleteStack(params.endpointId, stack.Id);
+    }
+    // 2. Deploy a new stack from docker compose into Portainer
+    core.info('Deploying new stack on Portainer server');
+    const payload = {
+        ...portainer_api_1.defaultPortainerStackFromGitPayload,
+        name: params.stackName,
+        repositoryURL: params.repositoryURL,
+        repositoryReferenceName: params.repositoryReferenceName,
+        composeFile: params.composeFile,
+        env: JSON.parse(params.envJson)
+    };
+    const newStack = await apiInstance.postStack(params.endpointId, payload);
+    if (newStack?.Status === 1)
+        core.info('Created new stack on Portainer successfully');
 }
 
 

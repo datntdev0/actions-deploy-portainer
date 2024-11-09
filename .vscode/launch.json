@@ -10,6 +10,23 @@
       "args": ["local-action", ".", "src/main.ts", ".env"],
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**", "node_modules/**"]
+    },
+    {
+      "name": "Debug Testing",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npx",
+      "cwd": "${workspaceRoot}",
+      "args": [
+        "jest",
+        "${fileBasenameNoExtension}",
+        "--runInBand",
+        "--watch",
+        "--coverage=false",
+        "--no-cache"
+      ],
+      "console": "integratedTerminal",
+      "sourceMaps": true
     }
   ]
 }
