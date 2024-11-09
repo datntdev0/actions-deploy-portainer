@@ -25668,14 +25668,14 @@ const portainer_1 = __importDefault(__nccwpck_require__(7641));
 async function run() {
     try {
         const parameters = {
-            baseUrl: core.getInput('base-url'),
-            accessToken: core.getInput('access-token'),
-            endpointId: Number.parseInt(core.getInput('endpoint-id')),
-            stackName: core.getInput('stack-name'),
-            repositoryURL: core.getInput('repository-url'),
-            repositoryReferenceName: core.getInput('repository-ref'),
-            composeFile: core.getInput('compose-file'),
-            envJson: core.getInput('env-json') || '{}'
+            baseUrl: core.getInput("base-url"),
+            accessToken: core.getInput("access-token"),
+            endpointId: Number.parseInt(core.getInput("endpoint-id")),
+            stackName: core.getInput("stack-name"),
+            repositoryURL: core.getInput("repository-url"),
+            repositoryReferenceName: core.getInput("repository-ref"),
+            composeFile: core.getInput("compose-file"),
+            envJson: core.getInput("env-json") || "{}",
         };
         await (0, portainer_1.default)(parameters);
     }
@@ -25697,44 +25697,44 @@ async function run() {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PortainerApi = exports.defaultPortainerStackFromGitPayload = void 0;
 exports.defaultPortainerStackFromGitPayload = {
-    method: 'repository',
-    type: 'standalone',
-    name: '', // replace with parameter
-    repositoryURL: '', // replace with parameter
-    repositoryReferenceName: '', // replace with parameter
-    composeFile: '', // replace with parameter
+    method: "repository",
+    type: "standalone",
+    name: "", // replace with parameter
+    repositoryURL: "", // replace with parameter
+    repositoryReferenceName: "", // replace with parameter
+    composeFile: "", // replace with parameter
     additionalFiles: [],
     repositoryAuthentication: false,
-    repositoryUsername: '',
-    repositoryPassword: '',
+    repositoryUsername: "",
+    repositoryPassword: "",
     repositoryGitCredentialID: 0,
     env: [], // replace with parameter
     supportRelativePath: false,
-    filesystemPath: '',
-    TLSSkipVerify: false
+    filesystemPath: "",
+    TLSSkipVerify: false,
 };
 class PortainerApi {
     _baseUrl;
     _defaultHeaders;
     constructor(baseUrl, token) {
         this._baseUrl = baseUrl;
-        this._defaultHeaders = { 'X-API-Key': token };
+        this._defaultHeaders = { "X-API-Key": token };
     }
     async getAllStacks() {
         const headers = this._defaultHeaders;
-        const request = { method: 'GET', headers };
+        const request = { method: "GET", headers };
         const response = await fetch(`${this._baseUrl}/api/stacks`, request);
         return (await response.json());
     }
     async deleteStack(endpointId, id) {
         const headers = this._defaultHeaders;
-        const request = { method: 'DELETE', headers };
+        const request = { method: "DELETE", headers };
         await fetch(`${this._baseUrl}/api/stacks/${id}?endpointId=${endpointId}`, request);
     }
     async postStack(endpointId, payload) {
         const headers = this._defaultHeaders;
         const rawData = JSON.stringify(payload);
-        const request = { method: 'POST', headers, body: rawData };
+        const request = { method: "POST", headers, body: rawData };
         const url = `${this._baseUrl}/api/stacks/create/standalone/repository?endpointId=${endpointId}`;
         const response = await fetch(url, request);
         return (await response.json());
@@ -25780,26 +25780,28 @@ const portainer_api_1 = __nccwpck_require__(9036);
 async function deploy(params) {
     const apiInstance = new portainer_api_1.PortainerApi(params.baseUrl, params.accessToken);
     // 1. Delete a stack if there is already existing in Portainer
-    core.info('Checking existing stack with the same name');
+    core.info("Checking existing stack with the same name");
     const stacks = await apiInstance.getAllStacks();
     const stack = stacks.find(x => x.Name === params.stackName);
     if (stack) {
-        core.info('Deleting existing stack with the same name');
+        core.info("Deleting existing stack with the same name");
         await apiInstance.deleteStack(params.endpointId, stack.Id);
     }
     // 2. Deploy a new stack from docker compose into Portainer
-    core.info('Deploying new stack on Portainer server');
+    core.info("Deploying new stack on Portainer server");
     const payload = {
         ...portainer_api_1.defaultPortainerStackFromGitPayload,
         name: params.stackName,
         repositoryURL: params.repositoryURL,
         repositoryReferenceName: params.repositoryReferenceName,
         composeFile: params.composeFile,
-        env: JSON.parse(params.envJson)
+        env: JSON.parse(params.envJson),
     };
     const newStack = await apiInstance.postStack(params.endpointId, payload);
     if (newStack?.Status === 1)
-        core.info('Created new stack on Portainer successfully');
+        core.info("Created new stack on Portainer successfully");
+    else
+        throw new Error(JSON.stringify(newStack));
 }
 
 
