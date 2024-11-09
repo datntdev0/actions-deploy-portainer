@@ -1,9 +1,9 @@
 # GitHub Action to deploy docker-compose on Portainer
 
-![GitHub Super-Linter](actions/workflows/linter.yml/badge.svg)
-![Continuous Integration](actions/workflows/ci.yml/badge.svg)
-![Check Transpiled JavaScript](actions/workflows/check-dist.yml/badge.svg)
-![CodeQL](actions/workflows/codeql-analysis.yml/badge.svg)
+![GitHub Super-Linter](https://github.com/datntdev0/actions-deploy-portainer/actions/workflows/check-linter.yml/badge.svg)
+![Continuous Integration](https://github.com/datntdev0/actions-deploy-portainer/actions/workflows/continuous-integration.yml/badge.svg)
+![Check Transpiled JavaScript](https://github.com/datntdev0/actions-deploy-portainer/actions/workflows/check-dist.yml/badge.svg)
+![CodeQL](https://github.com/datntdev0/actions-deploy-portainer/actions/workflows/codeql-analysis.yml/badge.svg)
 ![Coverage](./badges/coverage.svg)
 
 This GitHub Action automates the deployment of a Docker-Compose file as a new
@@ -31,7 +31,7 @@ stack-name|The name of stack|required
 repository-url|The git repository url storing the docker-compose|required
 repository-ref|The ref branch name of git repository|required
 compose-file|The docker-compose file path relative from the root|required
-env-json|The environment varialble json object|{}
+env-json|The environment varialble json object|required
 
 ### Examples
 

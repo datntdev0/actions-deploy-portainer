@@ -15,7 +15,7 @@ export async function run(): Promise<void> {
       repositoryURL: core.getInput("repository-url"),
       repositoryReferenceName: core.getInput("repository-ref"),
       composeFile: core.getInput("compose-file"),
-      envJson: core.getInput("env-json") || "{}",
+      envJson: core.getInput("env-json"),
     };
 
     await deploy(parameters);

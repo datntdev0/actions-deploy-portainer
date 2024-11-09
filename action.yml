@@ -27,15 +27,12 @@ inputs:
   repository-ref:
     description: 'The ref branch name of git repository'
     required: true
-    default: 'main'
   compose-file:
     description: 'The docker-compose file path relative from the root'
     required: true
-    default: './docker-compose.yml'
   env-json:
     description: 'The environment varialble json object'
-    required: false
-    default: '{}'
+    required: true
 
 runs:
   using: node20

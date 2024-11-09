@@ -44,7 +44,7 @@ describe("deploy", () => {
         } else if (options.method === "POST") {
           return Promise.resolve({
             json: async () =>
-              Promise.resolve({ id: 123, name: stackName, status: 1 }),
+              Promise.resolve({ Id: 123, Name: stackName, Status: 1 }),
           });
         }
         return Promise.resolve({
@@ -95,12 +95,12 @@ describe("deploy", () => {
   it("should delete an existing stack and deploy a new one", async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       json: async () =>
-        Promise.resolve([{ id: 123, name: stackName, status: 1 }]),
+        Promise.resolve([{ Id: 123, Name: stackName, Status: 1 }]),
     });
     (fetch as jest.Mock).mockResolvedValueOnce({});
     (fetch as jest.Mock).mockResolvedValueOnce({
       json: async () =>
-        Promise.resolve({ id: 124, name: stackName, status: 1 }),
+        Promise.resolve({ Id: 124, Name: stackName, Status: 1 }),
     });
 
     await deploy(params);
@@ -142,6 +142,63 @@ describe("deploy", () => {
     );
     expect(fetch).toHaveBeenNthCalledWith(
       3,
+      `${baseUrl}/api/stacks/create/standalone/repository?endpointId=${endpointId}`,
+      {
+        method: "POST",
+        headers: expect.objectContaining({ "X-API-Key": token }),
+        body: JSON.stringify(expectedPayload),
+      },
+    );
+  });
+
+  it("should throw an error when stack creation fails", async () => {
+    const failedStackResponse = { Id: 124, Name: stackName, Status: 0 }; // Simulating a failed stack creation
+
+    jest.clearAllMocks();
+    (fetch as jest.Mock).mockImplementation(
+      async (url, options: RequestInit) => {
+        if (options.method === "GET") {
+          return Promise.resolve({
+            json: async () => Promise.resolve([]),
+          });
+        } else if (options.method === "POST") {
+          return Promise.resolve({
+            json: async () => Promise.resolve(failedStackResponse),
+          });
+        }
+        return Promise.resolve({
+          json: async () => Promise.resolve({}),
+        });
+      },
+    );
+
+    await expect(deploy(params)).rejects.toThrow(
+      JSON.stringify(failedStackResponse),
+    );
+
+    expect(core.info).toHaveBeenCalledWith(
+      "Checking existing stack with the same name",
+    );
+    expect(core.info).toHaveBeenCalledWith(
+      "Deploying new stack on Portainer server",
+    );
+
+    const expectedPayload = {
+      ...defaultPortainerStackFromGitPayload,
+      name: stackName,
+      repositoryURL,
+      repositoryReferenceName,
+      composeFile,
+      env: JSON.parse(envJson),
+    };
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenNthCalledWith(1, `${baseUrl}/api/stacks`, {
+      method: "GET",
+      headers: expect.objectContaining({ "X-API-Key": token }),
+    });
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
       `${baseUrl}/api/stacks/create/standalone/repository?endpointId=${endpointId}`,
       {
         method: "POST",
