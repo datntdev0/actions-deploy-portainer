@@ -7,83 +7,65 @@
  */
 
 import * as core from '@actions/core'
-import * as main from '../src/main'
+import { run } from '../src/main' // Update this to your actual path
+import deploy from '../src/portainer' // Update this to your actual path
 
-// Mock the action's main function
-const runMock = jest.spyOn(main, 'run')
+jest.mock('@actions/core')
+jest.mock('../src/portainer') // Update this to your actual path
 
-// Other utilities
-const timeRegex = /^\d{2}:\d{2}:\d{2}/
+describe('run', () => {
+  const mockParams = {
+    'base-url': 'http://localhost:9000',
+    'access-token': 'test-token',
+    'endpoint-id': '1',
+    'stack-name': 'test-stack',
+    'repository-url': 'http://repo.url',
+    'repository-ref': 'main',
+    'compose-file': 'docker-compose.yml',
+    'env-json': JSON.stringify([{ name: 'ENV_VAR', value: 'value' }])
+  }
 
-// Mock the GitHub Actions core library
-let debugMock: jest.SpiedFunction<typeof core.debug>
-let errorMock: jest.SpiedFunction<typeof core.error>
-let getInputMock: jest.SpiedFunction<typeof core.getInput>
-let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
-let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
-
-describe('action', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-
-    debugMock = jest.spyOn(core, 'debug').mockImplementation()
-    errorMock = jest.spyOn(core, 'error').mockImplementation()
-    getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
-    setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
-    setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
+    ;(core.getInput as jest.Mock).mockImplementation((name: string) => {
+      return mockParams[name as keyof typeof mockParams]
+    })
   })
 
-  it('sets the time output', async () => {
-    // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation(name => {
-      switch (name) {
-        case 'milliseconds':
-          return '500'
-        default:
-          return ''
-      }
-    })
+  it('should call deploy with the correct parameters', async () => {
+    const expectedParams = {
+      baseUrl: mockParams['base-url'],
+      accessToken: mockParams['access-token'],
+      endpointId: Number.parseInt(mockParams['endpoint-id']),
+      stackName: mockParams['stack-name'],
+      repositoryURL: mockParams['repository-url'],
+      repositoryReferenceName: mockParams['repository-ref'],
+      composeFile: mockParams['compose-file'],
+      envJson: mockParams['env-json']
+    }
 
-    await main.run()
-    expect(runMock).toHaveReturned()
+    await run()
 
-    // Verify that all of the core library functions were called correctly
-    expect(debugMock).toHaveBeenNthCalledWith(1, 'Waiting 500 milliseconds ...')
-    expect(debugMock).toHaveBeenNthCalledWith(
-      2,
-      expect.stringMatching(timeRegex)
-    )
-    expect(debugMock).toHaveBeenNthCalledWith(
-      3,
-      expect.stringMatching(timeRegex)
-    )
-    expect(setOutputMock).toHaveBeenNthCalledWith(
-      1,
-      'time',
-      expect.stringMatching(timeRegex)
-    )
-    expect(errorMock).not.toHaveBeenCalled()
+    expect(core.getInput).toHaveBeenCalledWith('base-url')
+    expect(core.getInput).toHaveBeenCalledWith('access-token')
+    expect(core.getInput).toHaveBeenCalledWith('endpoint-id')
+    expect(core.getInput).toHaveBeenCalledWith('stack-name')
+    expect(core.getInput).toHaveBeenCalledWith('repository-url')
+    expect(core.getInput).toHaveBeenCalledWith('repository-ref')
+    expect(core.getInput).toHaveBeenCalledWith('compose-file')
+    expect(core.getInput).toHaveBeenCalledWith('env-json')
+
+    expect(deploy).toHaveBeenCalledWith(expectedParams)
   })
 
-  it('sets a failed status', async () => {
-    // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation(name => {
-      switch (name) {
-        case 'milliseconds':
-          return 'this is not a number'
-        default:
-          return ''
-      }
+  it('should handle errors and set the action as failed', async () => {
+    const errorMessage = 'Deployment failed'
+    ;(deploy as jest.Mock).mockImplementation(() => {
+      throw new Error(errorMessage)
     })
 
-    await main.run()
-    expect(runMock).toHaveReturned()
+    await run()
 
-    // Verify that all of the core library functions were called correctly
-    expect(setFailedMock).toHaveBeenNthCalledWith(
-      1,
-      'milliseconds not a number'
-    )
-    expect(errorMock).not.toHaveBeenCalled()
+    expect(core.setFailed).toHaveBeenCalledWith(errorMessage)
   })
 })
