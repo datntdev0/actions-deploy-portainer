@@ -1,23 +1,41 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Deploy Portainer stack'
+description: 'Github Action to deploy a stack to a Portainer server'
+author: 'Dat Nguyen <datntdev0>'
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: 'heart'
-  color: 'red'
+  icon: 'package'
+  color: 'blue'
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  base-url:
+    description: 'The base url of the Portainer server'
     required: true
-    default: '1000'
-
-# Define your outputs here.
-outputs:
-  time:
-    description: 'Your output description here'
+  access-token:
+    description: 'The access token generated from user of Portainer'
+    required: true
+  endpoint-id:
+    description: 'The environment id to deploy stack'
+    required: true
+  stack-name:
+    description: 'The name of stack'
+    required: true
+  repository-url:
+    description: 'The git repository url storing the docker-compose'
+    required: true
+  repository-ref:
+    description: 'The ref branch name of git repository'
+    required: true
+    default: 'main'
+  compose-file:
+    description: 'The docker-compose file path relative from the root'
+    required: true
+    default: './docker-compose.yml'
+  env-json:
+    description: 'The environment varialble json object'
+    required: false
+    default: '{}'
 
 runs:
   using: node20

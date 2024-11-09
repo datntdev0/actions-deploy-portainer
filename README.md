@@ -1,3 +1,27 @@
+# GitHub Action to deploy docker-compose on Portainer
+
+This GitHub Action automates the deployment of a Docker-Compose file as a new
+stack on a Portainer server. It simplifies continuous deployment workflows by
+integrating directly with your Portainer instance, ensuring that your
+multi-container applications are consistently up-to-date.
+
+## Prerequisites
+
+- You must have a running Portainer and can access from outside.
+- You must have a access key with the Environment Administrator permission to
+  deploy into that environment.
+- At this version, we are only support to deploy with public git repository.
+
+## Action usages
+
+### Action inputs
+
+TBD
+
+### Examples
+
+TBD
+
 # Create a GitHub Action Using TypeScript
 
 [![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
